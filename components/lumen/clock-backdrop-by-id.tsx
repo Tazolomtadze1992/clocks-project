@@ -3,33 +3,15 @@
 import * as React from "react"
 
 import { Card1PaperMeshFlutedBackdrop } from "@/components/lumen/card-1-paper-mesh-fluted"
-import { Card2PaperShaderBackdrop } from "@/components/lumen/card-2-paper-liquid-metal"
+import { Card1FullscreenShader } from "@/components/lumen/fullscreen-shaders/card-1-fullscreen-shader"
 import type { ShaderFitMode } from "@/components/lumen/shader-fit"
-import {
-  Card3PaperShaderOverlay,
-  Card3PaperSimplexNoiseShader,
-} from "@/components/lumen/card-3-paper-simplex-noise"
-import {
-  Card4PaperShaderOverlay,
-  Card4PaperVoronoiShader,
-} from "@/components/lumen/card-4-paper-voronoi"
-import {
-  Card5PaperShaderOverlay,
-  Card5PaperVoronoiShader,
-} from "@/components/lumen/card-5-paper-voronoi"
-import {
-  Card6PaperMeshGradientShader,
-  Card6PaperShaderOverlay,
-} from "@/components/lumen/card-6-paper-mesh-gradient"
 import {
   Card7PaperMeshGradientShader,
   Card7PaperShaderOverlay,
 } from "@/components/lumen/card-7-paper-mesh-gradient"
-import {
-  Card8PaperDitheringShader,
-  Card8PaperShaderOverlay,
-} from "@/components/lumen/card-8-paper-dithering"
-import type { ClockCardId } from "@/lib/lumen/clock-card-ids"
+import { Card7FullscreenShader } from "@/components/lumen/fullscreen-shaders/card-7-fullscreen-shader"
+import { ClockStaticImageBackdrop } from "@/components/lumen/clock-static-image-backdrop"
+import { getStaticClockImageSrc, type ClockCardId } from "@/lib/lumen/clock-card-ids"
 import { cn } from "@/lib/utils"
 
 type ClockBackdropByIdProps = {
@@ -44,8 +26,8 @@ type ClockBackdropByIdProps = {
 }
 
 /**
- * Paper/WebGL layers for a clock id — same sources as {@link ClockCardById}, without the card shell or layout face.
- * Use inside a `relative` parent (`absolute inset-0` or full-height flex).
+ * Backdrop for a clock id: Paper/WebGL shaders, or a full-bleed static JPEG — same sources as {@link ClockCardById},
+ * without the card shell or layout face. Use inside a `relative` parent (`absolute inset-0` or full-height flex).
  */
 export function ClockBackdropById({
   id,
@@ -55,52 +37,25 @@ export function ClockBackdropById({
 }: ClockBackdropByIdProps) {
   const shaderFitMode: ShaderFitMode = variant === "fullscreen" ? "cover" : "card"
 
-  const inner = (() => {
+  const staticSrc = getStaticClockImageSrc(id)
+
+  const inner = staticSrc ? (
+    <ClockStaticImageBackdrop src={staticSrc} />
+  ) : (() => {
     switch (id) {
       case "1":
-        return <Card1PaperMeshFlutedBackdrop animated={animated} shaderFitMode={shaderFitMode} />
-      case "2":
-        return <Card2PaperShaderBackdrop animated={animated} shaderFitMode={shaderFitMode} />
-      case "3":
-        return (
-          <>
-            <Card3PaperSimplexNoiseShader animated={animated} shaderFitMode={shaderFitMode} />
-            <Card3PaperShaderOverlay />
-          </>
-        )
-      case "4":
-        return (
-          <>
-            <Card4PaperVoronoiShader animated={animated} shaderFitMode={shaderFitMode} />
-            <Card4PaperShaderOverlay />
-          </>
-        )
-      case "5":
-        return (
-          <>
-            <Card5PaperVoronoiShader animated={animated} shaderFitMode={shaderFitMode} />
-            <Card5PaperShaderOverlay />
-          </>
-        )
-      case "6":
-        return (
-          <>
-            <Card6PaperMeshGradientShader animated={animated} shaderFitMode={shaderFitMode} />
-            <Card6PaperShaderOverlay />
-          </>
+        return variant === "fullscreen" ? (
+          <Card1FullscreenShader animated={animated} />
+        ) : (
+          <Card1PaperMeshFlutedBackdrop animated={animated} shaderFitMode={shaderFitMode} />
         )
       case "7":
-        return (
+        return variant === "fullscreen" ? (
+          <Card7FullscreenShader animated={animated} />
+        ) : (
           <>
             <Card7PaperMeshGradientShader animated={animated} shaderFitMode={shaderFitMode} />
             <Card7PaperShaderOverlay />
-          </>
-        )
-      case "8":
-        return (
-          <>
-            <Card8PaperDitheringShader animated={animated} shaderFitMode={shaderFitMode} />
-            <Card8PaperShaderOverlay />
           </>
         )
       default:
@@ -111,10 +66,16 @@ export function ClockBackdropById({
   return (
     <div
       className={cn(
-        "absolute inset-0 h-full w-full overflow-hidden [&>*]:absolute [&>*]:inset-0 [&>*]:h-full [&>*]:w-full",
-        id === "2" && "bg-[#AAAAAC]",
-        id === "4" || id === "5" || id === "6" || id === "7" ? "bg-[#f4f4f5]" : null,
-        id === "8" && "bg-black",
+        "absolute inset-0 h-full w-full min-h-full min-w-full overflow-hidden [&>*]:absolute",
+        variant === "fullscreen"
+          ? "[&>*]:!-inset-px [&>*]:!h-[calc(100%+2px)] [&>*]:!w-[calc(100%+2px)]"
+          : "[&>*]:inset-0 [&>*]:h-full [&>*]:w-full",
+        /* Card mode: light base behind shaders. Fullscreen: black so subpixel gaps read as shadow, not white stripes. */
+        variant === "fullscreen"
+          ? "bg-black"
+          : id === "7"
+            ? "bg-[#f4f4f5]"
+            : null,
         className
       )}
     >

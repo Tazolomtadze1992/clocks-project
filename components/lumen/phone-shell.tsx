@@ -22,7 +22,7 @@ export const PhoneShell = React.forwardRef<HTMLDivElement, PhoneShellProps>(func
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-[2.75rem] shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]"
+        className="pointer-events-none absolute inset-0 z-0 rounded-[2.75rem] shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]"
       />
       {children}
       <div

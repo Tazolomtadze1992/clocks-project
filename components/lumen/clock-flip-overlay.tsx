@@ -8,7 +8,9 @@ const easeFlipMove: [number, number, number, number] = [0.45, 0, 0.2, 1]
 const defaultFlipInMoveDurationSec = 0.3
 
 type ClockFlipOverlayProps = {
-  /** Animation interpolates from this screen rect to `to`. */
+  /** Viewport rect of the `absolute inset-0 overflow-hidden` parent — FLIP uses `absolute` coords relative to this box. */
+  clipContainerRef: React.RefObject<HTMLElement | null>
+  /** Animation interpolates from this screen rect to `to` (viewport space; typically intersected with phone bounds). */
   from: DOMRect
   to: DOMRect
   /** Fires when the FLIP transform finishes (opacity stays 1 — parent reveals real card, then unmounts overlay on next frame). */
@@ -19,10 +21,12 @@ type ClockFlipOverlayProps = {
 }
 
 /**
- * FLIP-style move: fixed box at the destination rect, animate with transform only
+ * FLIP-style move: box at the destination rect, animate with transform only
  * (avoids per-frame layout on left/top/width/height — smoother with shader-heavy cards).
+ * Renders `absolute` inside the clip container so `overflow-hidden` on the phone shell clips partial cards.
  */
 export function ClockFlipOverlay({
+  clipContainerRef,
   from,
   to,
   onMoveComplete,
@@ -52,18 +56,26 @@ export function ClockFlipOverlay({
     return null
   }
 
+  const clip = clipContainerRef.current?.getBoundingClientRect()
+  if (!clip) {
+    return null
+  }
+
   const sx = to.width > 0 ? from.width / to.width : 1
   const sy = to.height > 0 ? from.height / to.height : 1
 
   const moveTransition = { duration: moveDurationSec, ease: easeFlipMove }
 
+  const left = to.left - clip.left
+  const top = to.top - clip.top
+
   return (
     <motion.div
-      className="pointer-events-none fixed z-[200] overflow-hidden rounded-[32px] shadow-[0_12px_12px_-10px_rgba(15,23,42,0.28),0_4px_8px_-6px_rgba(15,23,42,0.16)] will-change-transform"
+      className="pointer-events-none absolute z-[1] overflow-hidden rounded-[32px] shadow-[0_12px_12px_-10px_rgba(15,23,42,0.28),0_4px_8px_-6px_rgba(15,23,42,0.16)] will-change-transform"
       style={{
-        position: "fixed",
-        left: to.left,
-        top: to.top,
+        position: "absolute",
+        left,
+        top,
         width: to.width,
         height: to.height,
         transformOrigin: "top left",

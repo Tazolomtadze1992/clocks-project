@@ -6,6 +6,7 @@ import * as React from "react"
 
 import { ClockCardById } from "@/components/lumen/clock-card-by-id"
 import { CLOCK_CARD_IDS, type ClockCardId } from "@/lib/lumen/clock-card-ids"
+import { getDefaultLayoutForClockId } from "@/lib/lumen/default-layout-by-clock-id"
 import { cn } from "@/lib/utils"
 
 export type MockupClockCardsProps = {
@@ -42,7 +43,12 @@ export function MockupClockCards({
           )}
           onClick={(e) => onCardSelect?.(id, e.currentTarget)}
         >
-          <ClockCardById id={id} now={now} animated={id === "1"} />
+          <ClockCardById
+            id={id}
+            now={now}
+            animated={id === "1"}
+            layoutMode={getDefaultLayoutForClockId(id)}
+          />
         </button>
       ))}
     </div>

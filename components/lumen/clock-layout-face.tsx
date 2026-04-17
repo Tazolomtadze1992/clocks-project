@@ -30,9 +30,9 @@ export function ClockLayoutFace({
     if (compact) {
       return (
         <div className="flex h-full w-full flex-col justify-between p-1.5" style={fg}>
-          <p className="text-right text-[6px] font-medium leading-tight opacity-75">
-            <span className="block">11°</span>
-            <span className="block">{t.monthDayShort}</span>
+          <p className="flex flex-row items-center justify-end gap-1 text-right text-[6px] font-medium leading-tight opacity-75">
+            <span>11°</span>
+            <span>{t.monthDayShort}</span>
           </p>
           <p className="text-right text-[8px] font-medium tabular-nums opacity-95">{t.shortTime}</p>
         </div>
@@ -40,13 +40,13 @@ export function ClockLayoutFace({
     }
     if (fs) {
       return (
-        <div className="flex h-full min-h-0 w-full flex-1 flex-col justify-between px-2 py-6" style={fg}>
-          <p className="text-right text-sm font-medium leading-relaxed tracking-wide opacity-80">
-            <span className="block">11°</span>
-            <span className="block">{t.monthDayShort}</span>
-            <span className="block">{t.weekdayUpper}</span>
+        <div className="flex h-full min-h-0 w-full flex-1 flex-col justify-between py-1 pr-1" style={fg}>
+          <p className="flex flex-row items-center justify-end gap-6 text-right text-[12px] font-normal leading-relaxed tracking-wide opacity-80">
+            <span>11°</span>
+            <span>{t.monthDayShort}</span>
+            <span>{t.weekdayUpper}</span>
           </p>
-          <p className="text-right font-medium tabular-nums tracking-tight opacity-95 [font-size:clamp(2rem,10vw,3.25rem)]">
+          <p className="translate-y-10 text-right font-medium tabular-nums tracking-tight opacity-95 [font-size:clamp(2rem,10vw,3.25rem)]">
             {t.shortTime}
           </p>
         </div>
@@ -54,10 +54,10 @@ export function ClockLayoutFace({
     }
     return (
       <div className="flex h-full min-h-[164px] w-full flex-col justify-between p-4" style={fg}>
-        <p className="text-right text-[10px] font-medium leading-relaxed tracking-wide opacity-75">
-          <span className="block">11°</span>
-          <span className="block">{t.monthDayShort}</span>
-          <span className="block">{t.weekdayUpper}</span>
+        <p className="flex flex-row items-center justify-end gap-4 text-right text-[9px] font-medium leading-relaxed tracking-wide opacity-75">
+          <span>11°</span>
+          <span>{t.monthDayShort}</span>
+          <span>{t.weekdayUpper}</span>
         </p>
         <p className="text-right font-medium tabular-nums tracking-tight text-[22px] opacity-95">{t.shortTime}</p>
       </div>
@@ -65,10 +65,10 @@ export function ClockLayoutFace({
   }
 
   const digit = compact
-    ? "text-[20px] font-black leading-none tracking-tight tabular-nums"
+    ? "text-[20px] font-black leading-none tracking-[0em] tabular-nums"
     : fs
-      ? "font-black leading-none tracking-tight tabular-nums [font-size:clamp(3rem,16vw,6.5rem)]"
-      : "text-[80px] font-black leading-none tracking-tight tabular-nums"
+      ? "font-black leading-none tracking-[0em] tabular-nums [font-size:clamp(3rem,16vw,6.5rem)]"
+      : "text-[80px] font-black leading-none tracking-[0em] tabular-nums"
   const corner = compact ? "text-[6px]" : fs ? "text-lg" : "text-[9px]"
 
   switch (mode) {
@@ -99,29 +99,41 @@ export function ClockLayoutFace({
             className={cn(
               "absolute flex flex-col justify-between border border-white/25 bg-white/[0.18] shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] backdrop-blur-xl backdrop-saturate-150",
               compact
-                ? "bottom-2 right-2 top-2 w-[52%] rounded-[12px] p-1.5"
+                ? "bottom-4 left-1/2 top-3 w-[52%] -translate-x-1/2 rounded-[8px] p-1.5"
                 : fs
-                  ? "bottom-8 right-6 top-24 w-[min(56%,280px)] rounded-[32px] p-5"
-                  : "bottom-4 right-4 top-4 w-[52%] rounded-[28px] p-3"
+                  ? "bottom-0 left-1/2 h-[34%] w-[min(100%,320px)] -translate-x-1/2 translate-y-3 rounded-[32px] p-5"
+                  : "bottom-4 left-1/2 top-4 w-[52%] -translate-x-1/2 rounded-[20px] p-3"
             )}
           >
-            <div className="flex flex-col justify-between gap-1" style={fg}>
-              <div
+            <div className="relative h-full w-full" style={fg}>
+              <span
                 className={cn(
-                  "flex items-start justify-between gap-1 font-medium",
-                  compact ? "text-[4px] leading-tight" : fs ? "text-sm leading-tight" : "text-[10px] leading-tight"
+                  "absolute left-0 top-0 font-medium leading-tight",
+                  compact ? "text-[4px]" : fs ? "text-sm" : "text-[10px]"
                 )}
               >
-                <span>11°</span>
-                <span className="text-right leading-tight">
-                  <span className="block">{t.weekday}</span>
-                  <span className="block opacity-90">{t.monthDayLong}</span>
-                </span>
-              </div>
+                11°
+              </span>
+              <span
+                className={cn(
+                  "absolute right-0 top-0 text-right font-medium leading-tight",
+                  compact ? "text-[4px]" : fs ? "text-sm" : "text-[10px]"
+                )}
+              >
+                {t.weekday}
+              </span>
+              <span
+                className={cn(
+                  "absolute bottom-0 right-0 text-right font-medium leading-tight opacity-90",
+                  compact ? "text-[4px]" : fs ? "text-sm" : "text-[10px]"
+                )}
+              >
+                {t.monthDayLong}
+              </span>
               <p
                 className={cn(
-                  "font-bold leading-none tracking-tight tabular-nums",
-                  compact ? "translate-y-0 text-[10px]" : fs ? "translate-y-2 text-[clamp(2.5rem,12vw,4rem)]" : "translate-y-3.5 text-[40px]"
+                  "absolute bottom-0 left-0 font-tanker font-normal leading-none tracking-tight tabular-nums",
+                  compact ? "translate-y-0 text-[10px]" : fs ? "translate-y-5 text-[clamp(2.5rem,12vw,4rem)]" : "translate-y-3.5 text-[40px]"
                 )}
               >
                 {t.hh}:{t.mm}
@@ -220,10 +232,10 @@ export function ClockLayoutFace({
           <span
             className={cn(
               compact
-                ? "font-tanker rounded bg-white/20 px-2 py-0.5 font-black tracking-tight tabular-nums shadow-inner backdrop-blur-[2px]"
+                ? "font-tanker rounded bg-white/20 px-2 py-0.5 font-black tracking-[0em] tabular-nums shadow-inner backdrop-blur-[2px]"
                 : fs
-                  ? "font-tanker rounded-xl bg-white/20 px-4 py-2 font-black tracking-tight tabular-nums shadow-inner backdrop-blur-[2px]"
-                  : "font-tanker rounded-md bg-white/20 px-3 py-0.5 font-black tracking-tight tabular-nums shadow-inner backdrop-blur-[2px]",
+                  ? "font-tanker rounded-xl bg-white/20 px-4 py-2 font-black tracking-[0em] tabular-nums shadow-inner backdrop-blur-[2px]"
+                  : "font-tanker rounded-md bg-white/20 px-3 py-0.5 font-black tracking-[0em] tabular-nums shadow-inner backdrop-blur-[2px]",
               digit
             )}
           >
@@ -233,10 +245,10 @@ export function ClockLayoutFace({
           <span
             className={cn(
               compact
-                ? "font-tanker rounded bg-white/20 px-2 py-0.5 font-black tracking-tight tabular-nums shadow-inner backdrop-blur-[2px]"
+                ? "font-tanker rounded bg-white/20 px-2 py-0.5 font-black tracking-[0em] tabular-nums shadow-inner backdrop-blur-[2px]"
                 : fs
-                  ? "font-tanker rounded-xl bg-white/20 px-4 py-2 font-black tracking-tight tabular-nums shadow-inner backdrop-blur-[2px]"
-                  : "font-tanker rounded-md bg-white/20 px-3 py-0.5 font-black tracking-tight tabular-nums shadow-inner backdrop-blur-[2px]",
+                  ? "font-tanker rounded-xl bg-white/20 px-4 py-2 font-black tracking-[0em] tabular-nums shadow-inner backdrop-blur-[2px]"
+                  : "font-tanker rounded-md bg-white/20 px-3 py-0.5 font-black tracking-[0em] tabular-nums shadow-inner backdrop-blur-[2px]",
               digit
             )}
           >

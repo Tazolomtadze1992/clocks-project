@@ -1,6 +1,5 @@
 /**
- * Shared hero sizing for Card 3’s default glass panel and the “Glass Container” layout mode.
- * Keep in sync in `clock-card-by-id.tsx` (case "3") and `clock-layout-face.tsx`.
+ * Shared hero sizing reference for the “Glass Container” layout mode in `clock-layout-face.tsx`.
  */
 export const glassContainerHeroLayout = {
   /** Outer row: right-aligned glass, full card min height. */

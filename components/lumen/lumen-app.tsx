@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { motion, useReducedMotion } from "framer-motion"
-import { Clock, Settings } from "lucide-react"
 
 import { ClockCardById } from "@/components/lumen/clock-card-by-id"
 import { ClockDetailView } from "@/components/lumen/clock-detail-view"
@@ -10,12 +9,11 @@ import { ClockFlipOverlay } from "@/components/lumen/clock-flip-overlay"
 import { MockupClockCards } from "@/components/lumen/mockup-clock-cards"
 import { PhoneShell } from "@/components/lumen/phone-shell"
 import type { ClockCardId } from "@/lib/lumen/clock-card-ids"
+import { getDefaultLayoutForClockId } from "@/lib/lumen/default-layout-by-clock-id"
+import { DEFAULT_CLOCK_LAYOUT_MODE, type ClockLayoutMode } from "@/lib/lumen/clock-layout-modes"
+import { intersectDomRectWithBounds } from "@/lib/lumen/intersect-dom-rect"
 import { useTickingClock } from "@/lib/lumen/use-ticking-clock"
 import { cn } from "@/lib/utils"
-
-/** Matches `clock-detail-view` back button enter (ease-out, short). */
-const galleryNavEaseOut: [number, number, number, number] = [0.22, 1, 0.36, 1]
-const galleryNavEnterDurationSec = 0.18
 
 function IosStatusBar({ now, className }: { now: Date; className?: string }) {
   const h = now.getHours() % 12 || 12
@@ -78,6 +76,8 @@ export function LumenApp() {
 
   const [phase, setPhase] = React.useState<Phase>("gallery")
   const [selectedId, setSelectedId] = React.useState<ClockCardId | null>(null)
+  /** Curated default on open; updated by Layout drawer — drives detail hero, preview, and FLIP overlay. */
+  const [detailLayoutMode, setDetailLayoutMode] = React.useState<ClockLayoutMode>(DEFAULT_CLOCK_LAYOUT_MODE)
   const [flipRects, setFlipRects] = React.useState<{ from: DOMRect; to: DOMRect } | null>(null)
   const [showDetailControls, setShowDetailControls] = React.useState(false)
   const [detailHeroAnimated, setDetailHeroAnimated] = React.useState(false)
@@ -118,6 +118,7 @@ export function LumenApp() {
       if (!scrollEl) return
       savedScrollTop.current = scrollEl.scrollTop
       openingGalleryRectRef.current = el.getBoundingClientRect()
+      setDetailLayoutMode(getDefaultLayoutForClockId(id))
       if (prefersReducedMotion) {
         setSelectedId(id)
         setDetailHeroShown(true)
@@ -126,8 +127,12 @@ export function LumenApp() {
         setShowDetailControls(true)
         return
       }
-      const from = el.getBoundingClientRect()
-      flipInFromRef.current = new DOMRect(from.x, from.y, from.width, from.height)
+      const shell = phoneShellElRef.current?.getBoundingClientRect()
+      const rawFrom = el.getBoundingClientRect()
+      const from = shell
+        ? intersectDomRectWithBounds(rawFrom, shell)
+        : new DOMRect(rawFrom.x, rawFrom.y, rawFrom.width, rawFrom.height)
+      flipInFromRef.current = from
       flipInToMeasuredRef.current = false
       setSelectedId(id)
       setDetailHeroShown(false)
@@ -164,10 +169,14 @@ export function LumenApp() {
         requestAnimationFrame(apply)
         return
       }
+      const shell = phoneShellElRef.current?.getBoundingClientRect()
+      const to = shell
+        ? intersectDomRectWithBounds(raw, shell)
+        : new DOMRect(raw.x, raw.y, raw.width, raw.height)
       flipInToMeasuredRef.current = true
       setFlipRects({
         from: new DOMRect(from.x, from.y, from.width, from.height),
-        to: new DOMRect(raw.x, raw.y, raw.width, raw.height),
+        to,
       })
     }
     apply()
@@ -214,17 +223,24 @@ export function LumenApp() {
       return
     }
 
-    const from = hero.getBoundingClientRect()
+    const shell = phoneShellElRef.current?.getBoundingClientRect()
+    const rawFrom = hero.getBoundingClientRect()
+    const from = shell
+      ? intersectDomRectWithBounds(rawFrom, shell)
+      : new DOMRect(rawFrom.x, rawFrom.y, rawFrom.width, rawFrom.height)
 
     const measured = cardRefs.current[id]?.getBoundingClientRect()
-    const to = measured ?? openingGalleryRectRef.current
-    if (!to) {
+    const rawTo = measured ?? openingGalleryRectRef.current
+    if (!rawTo) {
       setSelectedId(null)
       setDetailHeroAnimated(false)
       setShowDetailControls(false)
       setPhase("gallery")
       return
     }
+    const to = shell
+      ? intersectDomRectWithBounds(rawTo, shell)
+      : new DOMRect(rawTo.x, rawTo.y, rawTo.width, rawTo.height)
 
     closingIdRef.current = id
     flipKindRef.current = "out"
@@ -248,16 +264,22 @@ export function LumenApp() {
         ? closingIdRef.current
         : null
 
+  const phoneShellElRef = React.useRef<HTMLDivElement | null>(null)
   const phoneShellRef = React.useCallback((node: HTMLDivElement | null) => {
+    phoneShellElRef.current = node
     setDrawerPortalContainer(node)
   }, [])
+
+  const flipClipRef = React.useRef<HTMLDivElement>(null)
 
   const [clockPreviewOpen, setClockPreviewOpen] = React.useState(false)
 
   return (
     <PhoneShell ref={phoneShellRef}>
-      <div className="relative flex min-h-0 flex-1 flex-col bg-white text-zinc-900 [color-scheme:light]">
-        {!clockPreviewOpen && <IosStatusBar now={now} />}
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-white text-zinc-900 [color-scheme:light]">
+        {!clockPreviewOpen && (
+          <IosStatusBar now={now} className="pointer-events-none absolute inset-x-0 top-0 z-50" />
+        )}
 
         <div
           ref={scrollAreaRef}
@@ -271,44 +293,7 @@ export function LumenApp() {
         >
           {showGallery && (
             <>
-              <motion.header
-                key="gallery-nav"
-                initial={prefersReducedMotion ? false : { opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: galleryNavEnterDurationSec, ease: galleryNavEaseOut }}
-                className="sticky top-0 z-10 -mx-4 mb-5 flex shrink-0 items-center justify-between px-4 pb-3 pt-4"
-              >
-                <div className="flex h-10 items-center gap-2.5 rounded-full bg-white px-3 pr-4">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden className="shrink-0 drop-shadow-sm">
-                    <defs>
-                      <linearGradient id="lumen-clock-icon-gradient" x1="4" y1="3" x2="20" y2="21" gradientUnits="userSpaceOnUse">
-                        <stop offset="0" stopColor="#FB7185" />
-                        <stop offset="0.5" stopColor="#D946EF" />
-                        <stop offset="1" stopColor="#7C3AED" />
-                      </linearGradient>
-                    </defs>
-                    <circle cx="12" cy="12" r="10" fill="url(#lumen-clock-icon-gradient)" />
-                    <path
-                      d="M12 7.25v5.15l3.35 2"
-                      stroke="white"
-                      strokeWidth="1.65"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  <span className="text-[15px] font-medium tracking-tight text-zinc-950">Clocks</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="flex size-10 items-center justify-center rounded-full border border-zinc-200/90 bg-white shadow-sm transition hover:bg-zinc-50"
-                    aria-label="Settings"
-                  >
-                    <Settings className="size-5 text-zinc-900" strokeWidth={1.65} />
-                  </button>
-                </div>
-              </motion.header>
-              <div className={cn(phase === "flip-out" && "pointer-events-none")}>
+              <div className={cn("pt-16", phase === "flip-out" && "pointer-events-none")}>
                 <MockupClockCards
                   now={now}
                   onCardSelect={openCard}
@@ -332,33 +317,48 @@ export function LumenApp() {
               heroVisible={detailHeroShown}
               drawerContainer={drawerPortalContainer}
               onPreviewOpenChange={setClockPreviewOpen}
+              layoutMode={detailLayoutMode}
+              onLayoutModeChange={setDetailLayoutMode}
             />
           )}
 
+        </div>
+
+        <div
+          ref={flipClipRef}
+          className="pointer-events-none absolute inset-0 z-[200] min-h-0 overflow-hidden"
+          aria-hidden
+        >
           {(phase === "flip-in" || phase === "flip-out") && flipRects && overlayId && (
-            <>
-              <ClockFlipOverlay
-                from={flipRects.from}
-                to={flipRects.to}
-                moveDurationSec={phase === "flip-out" ? 0.28 : 0.3}
-                onMoveComplete={onFlipMoveComplete}
-              >
-                <ClockCardById
-                  id={overlayId}
-                  now={now}
-                  animated={false}
-                  className="h-full min-h-0 w-full shadow-none"
-                />
-              </ClockFlipOverlay>
-            </>
+            <ClockFlipOverlay
+              clipContainerRef={flipClipRef}
+              from={flipRects.from}
+              to={flipRects.to}
+              moveDurationSec={phase === "flip-out" ? 0.28 : 0.3}
+              onMoveComplete={onFlipMoveComplete}
+            >
+              <ClockCardById
+                id={overlayId}
+                now={now}
+                animated={false}
+                layoutMode={detailLayoutMode}
+                className="h-full min-h-0 w-full shadow-none"
+              />
+            </ClockFlipOverlay>
           )}
         </div>
 
         {phase === "gallery" && (
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-40 h-8 bg-[linear-gradient(to_top,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.82)_28%,rgba(255,255,255,0.38)_64%,rgba(255,255,255,0)_100%)]"
-          />
+          <>
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 z-40 h-8 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.82)_28%,rgba(255,255,255,0.38)_64%,rgba(255,255,255,0)_100%)]"
+            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 bottom-0 z-40 h-8 bg-[linear-gradient(to_top,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.82)_28%,rgba(255,255,255,0.38)_64%,rgba(255,255,255,0)_100%)]"
+            />
+          </>
         )}
       </div>
     </PhoneShell>
