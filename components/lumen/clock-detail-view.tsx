@@ -3,7 +3,7 @@
 import * as React from "react"
 import { createPortal } from "react-dom"
 import { CaseUpper, ChevronDown, ChevronLeft, Image } from "lucide-react"
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
+import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "framer-motion"
 
 import { ClockCardById } from "@/components/lumen/clock-card-by-id"
 import { ClockFullscreenPreview } from "@/components/lumen/clock-fullscreen-preview"
@@ -25,9 +25,11 @@ const backEnterDurationSec = 0.18
 const controlsEnterDurationSec = 0.2
 const controlsEnterDelaySec = 0
 
-/** Fullscreen preview shell — modal-like timing; face stagger lives in clock-fullscreen-preview. */
-const previewEnterDurationSec = 0.27
-const previewExitDurationSec = 0.2
+/** Shared layout morph (detail card ↔ fullscreen preview); face stagger lives in clock-fullscreen-preview. */
+const previewLayoutDurationSec = 0.32
+
+/** Stable id for Framer shared layout (Jakub-style card → fullscreen). */
+const PREVIEW_SURFACE_LAYOUT_ID = "lumen-preview-surface"
 
 type ClockDetailViewProps = {
   clockId: ClockCardId
@@ -125,23 +127,21 @@ export function ClockDetailView({
     }
   }, [interactionLocked])
 
-  const previewEnterSec = reduceMotion ? 0 : previewEnterDurationSec
-  const previewExitSec = reduceMotion ? 0 : previewExitDurationSec
+  const layoutTransition = reduceMotion
+    ? { duration: 0 }
+    : { type: "tween" as const, duration: previewLayoutDurationSec, ease: easeOut }
 
   const fullscreenOverlay = (
-    <AnimatePresence>
+    <AnimatePresence initial={false} mode="popLayout">
       {previewOpen && (
         <motion.div
           key="clock-fullscreen-preview"
-          className={cn(
-            "absolute inset-0 z-[300] min-h-full min-w-full overflow-hidden bg-black",
-            /* While AnimatePresence runs exit, previewOpen is already false — without this, the
-             * invisible layer still captures hits and blocks the detail back button / controls. */
-            previewOpen ? "pointer-events-auto" : "pointer-events-none"
-          )}
+          layoutId={PREVIEW_SURFACE_LAYOUT_ID}
+          className="absolute inset-0 z-[300] flex min-h-full min-w-full flex-col overflow-hidden bg-black"
+          initial={false}
+          animate={{ borderRadius: "0px" }}
           role="button"
-          tabIndex={previewOpen ? 0 : -1}
-          aria-hidden={!previewOpen}
+          tabIndex={0}
           aria-label="Exit preview"
           onClick={() => setPreviewOpen(false)}
           onKeyDown={(event) => {
@@ -150,19 +150,7 @@ export function ClockDetailView({
               setPreviewOpen(false)
             }
           }}
-          initial={reduceMotion ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={
-            reduceMotion
-              ? { opacity: 0, transition: { duration: 0 } }
-              : {
-                  opacity: 0,
-                  transition: { duration: previewExitSec, ease: easeOut },
-                }
-          }
-          transition={
-            reduceMotion ? { duration: 0 } : { duration: previewEnterSec, ease: easeOut }
-          }
+          transition={{ layout: layoutTransition, borderRadius: layoutTransition }}
         >
           {/*
            * Do not pass heroRef here — it must stay on the detail card wrapper only. Sharing the
@@ -175,7 +163,7 @@ export function ClockDetailView({
             layoutMode={layoutMode}
             fontColor={FONT_COLOR_CSS[fontColorId]}
             animated
-            className="h-full w-full"
+            className="h-full min-h-0 w-full flex-1"
           />
         </motion.div>
       )}
@@ -183,6 +171,7 @@ export function ClockDetailView({
   )
 
   return (
+    <LayoutGroup id="lumen-preview">
     <div
       ref={rootRef}
       className={cn(
@@ -223,14 +212,22 @@ export function ClockDetailView({
                 className={cn("w-full max-w-[358px]", !heroVisible && "pointer-events-none opacity-0")}
                 aria-hidden={!heroVisible}
               >
-                <ClockCardById
-                  id={clockId}
-                  now={now}
-                  className="w-full"
-                  animated={heroAnimated}
-                  layoutMode={layoutMode}
-                  fontColor={FONT_COLOR_CSS[fontColorId]}
-                />
+                <motion.div
+                  layoutId={PREVIEW_SURFACE_LAYOUT_ID}
+                  className="relative w-full min-h-[164px] overflow-hidden rounded-[32px] shadow-[0_12px_12px_-10px_rgba(15,23,42,0.28),0_4px_8px_-6px_rgba(15,23,42,0.16)]"
+                  initial={false}
+                  animate={{ borderRadius: "32px" }}
+                  transition={{ layout: layoutTransition, borderRadius: layoutTransition }}
+                >
+                  <ClockCardById
+                    id={clockId}
+                    now={now}
+                    className="w-full !rounded-none !shadow-none"
+                    animated={heroAnimated}
+                    layoutMode={layoutMode}
+                    fontColor={FONT_COLOR_CSS[fontColorId]}
+                  />
+                </motion.div>
               </div>
             </div>
 
@@ -314,5 +311,6 @@ export function ClockDetailView({
 
       {drawerContainer ? createPortal(fullscreenOverlay, drawerContainer) : fullscreenOverlay}
     </div>
+    </LayoutGroup>
   )
 }
