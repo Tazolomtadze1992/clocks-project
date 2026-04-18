@@ -1,10 +1,10 @@
-import { Figtree, Geist_Mono, Outfit } from "next/font/google"
+import { Geist, Geist_Mono, Outfit } from "next/font/google"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
 
-const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" })
+const geistSans = Geist({ subsets: ["latin"], variable: "--font-sans" })
 
 const fontDisplay = Outfit({
   subsets: ["latin"],
@@ -31,7 +31,7 @@ export default function RootLayout({
         fontMono.variable,
         fontDisplay.variable,
         "font-sans",
-        figtree.variable
+        geistSans.variable
       )}
     >
       <body>

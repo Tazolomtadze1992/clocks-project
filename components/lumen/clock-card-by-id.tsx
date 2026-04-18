@@ -30,7 +30,7 @@ function CardInnerWithLayout({
   )
 }
 
-type ClockCardByIdProps = {
+export type ClockCardByIdProps = {
   id: ClockCardId
   now: Date
   className?: string
@@ -42,18 +42,20 @@ type ClockCardByIdProps = {
   fontColor?: string
 }
 
-export const ClockCardById = React.memo(function ClockCardById({
-  id,
-  now,
-  className,
-  animated = true,
-  layoutMode = DEFAULT_CLOCK_LAYOUT_MODE,
-  fontColor,
-}: ClockCardByIdProps) {
-  return (
-    <div className={cn(clockCardShellClass, className)}>
-      <ClockBackdropById id={id} animated={animated} />
-      <CardInnerWithLayout layoutMode={layoutMode} now={now} fontColor={fontColor} />
-    </div>
-  )
-})
+const ClockCardByIdImpl = React.forwardRef<HTMLDivElement, ClockCardByIdProps>(
+  function ClockCardById(
+    { id, now, className, animated = true, layoutMode = DEFAULT_CLOCK_LAYOUT_MODE, fontColor },
+    ref
+  ) {
+    return (
+      <div ref={ref} className={cn(clockCardShellClass, className)}>
+        <ClockBackdropById id={id} animated={animated} />
+        <CardInnerWithLayout layoutMode={layoutMode} now={now} fontColor={fontColor} />
+      </div>
+    )
+  }
+)
+
+ClockCardByIdImpl.displayName = "ClockCardById"
+
+export const ClockCardById = React.memo(ClockCardByIdImpl)

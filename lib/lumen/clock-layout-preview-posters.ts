@@ -1,8 +1,8 @@
 import type { ClockCardId } from "@/lib/lumen/clock-card-ids"
-import { STATIC_CLOCK_CARD_IDS } from "@/lib/lumen/clock-card-ids"
+import { getStaticClockImageSrc, STATIC_CLOCK_CARD_IDS } from "@/lib/lumen/clock-card-ids"
 
 const staticPosters = Object.fromEntries(
-  STATIC_CLOCK_CARD_IDS.map((id) => [id, `/statics/${id}.jpeg`])
+  STATIC_CLOCK_CARD_IDS.map((id) => [id, getStaticClockImageSrc(id)!])
 ) as Record<(typeof STATIC_CLOCK_CARD_IDS)[number], string>
 
 /**

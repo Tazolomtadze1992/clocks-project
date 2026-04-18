@@ -5,15 +5,16 @@ import * as React from "react"
 // Paper shaders are scaled into cards via `ShaderFit` — see ./shader-fit.tsx and per-card tune comments in card-*.tsx
 
 import { ClockCardById } from "@/components/lumen/clock-card-by-id"
-import { CLOCK_CARD_IDS, type ClockCardId } from "@/lib/lumen/clock-card-ids"
+import { CLOCK_CARD_IDS, SHADER_CLOCK_CARD_IDS, type ClockCardId } from "@/lib/lumen/clock-card-ids"
 import { getDefaultLayoutForClockId } from "@/lib/lumen/default-layout-by-clock-id"
 import { cn } from "@/lib/utils"
 
 export type MockupClockCardsProps = {
   now: Date
   className?: string
-  /** Called with the card root element (button) for FLIP measurement */
-  onCardSelect?: (id: ClockCardId, element: HTMLElement) => void
+  /** Parent reads `registerCardRef` surface for FLIP rects (card shell `div`, not the outer control). */
+  onCardSelect?: (id: ClockCardId) => void
+  /** Card shell element (`ClockCardById` root) for FLIP `from` / flip-out `to`. */
   registerCardRef?: (id: ClockCardId, element: HTMLElement | null) => void
   /** During FLIP, hide the source card (keeps layout; avoids duplicate) */
   hiddenCardId?: ClockCardId | null
@@ -35,18 +36,18 @@ export function MockupClockCards({
         <button
           key={id}
           type="button"
-          ref={(el) => registerCardRef?.(id, el)}
           className={cn(
-            "w-full rounded-[32px] text-left outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/80 focus-visible:ring-offset-2",
+            "w-full appearance-none rounded-[32px] border-0 bg-transparent p-0 text-left shadow-none ring-0 outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/80 focus-visible:ring-offset-2",
             !disableOpacityTransitions && "transition-opacity active:opacity-95",
             id === hiddenCardId && "pointer-events-none opacity-0"
           )}
-          onClick={(e) => onCardSelect?.(id, e.currentTarget)}
+          onClick={() => onCardSelect?.(id)}
         >
           <ClockCardById
+            ref={(el) => registerCardRef?.(id, el)}
             id={id}
             now={now}
-            animated={id === "1"}
+            animated={(SHADER_CLOCK_CARD_IDS as readonly string[]).includes(id)}
             layoutMode={getDefaultLayoutForClockId(id)}
           />
         </button>

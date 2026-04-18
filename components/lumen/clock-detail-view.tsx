@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { createPortal } from "react-dom"
-import { CaseUpper, ChevronDown, ChevronLeft, Image } from "lucide-react"
+import { ChevronDown, ChevronLeft, Cookie, Palette } from "lucide-react"
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "framer-motion"
 
 import { ClockCardById } from "@/components/lumen/clock-card-by-id"
@@ -74,9 +74,9 @@ function SettingRow({
         <span className="flex shrink-0 items-center justify-center">{icon}</span>
         <span className="text-[14px] font-medium leading-none tracking-tight text-zinc-900">{label}</span>
       </span>
-      <span className="flex shrink-0 items-center gap-1.5">
+      <span className="flex shrink-0 items-center gap-1">
         <span className="text-[14px] font-medium leading-none tracking-tight text-zinc-900">{value}</span>
-        <ChevronDown className="size-[18px] text-zinc-400" strokeWidth={2} aria-hidden />
+        <ChevronDown className="size-[16px] text-zinc-400" strokeWidth={3} aria-hidden />
       </span>
     </button>
   )
@@ -188,12 +188,12 @@ export function ClockDetailView({
             initial={reduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: backEnterDurationSec, ease: easeOut }}
-            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-600 transition hover:bg-zinc-200/90"
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-600 transition-colors transition-transform duration-150 hover:bg-zinc-200/90 active:scale-[0.97]"
             aria-label="Back to gallery"
             tabIndex={interactionLocked ? -1 : undefined}
             onClick={onBack}
           >
-            <ChevronLeft className="size-[18px]" strokeWidth={2} />
+            <ChevronLeft className="size-[16px] text-zinc-500" strokeWidth={3.5} />
           </motion.button>
         </div>
       )}
@@ -208,26 +208,38 @@ export function ClockDetailView({
           <div className="mx-auto my-auto flex w-full min-w-0 max-w-[358px] flex-col">
             <div className="flex min-h-[220px] shrink-0 items-center justify-center pb-6 pt-2">
               <div
-                ref={heroRef}
                 className={cn("w-full max-w-[358px]", !heroVisible && "pointer-events-none opacity-0")}
                 aria-hidden={!heroVisible}
               >
-                <motion.div
-                  layoutId={PREVIEW_SURFACE_LAYOUT_ID}
-                  className="relative w-full min-h-[164px] overflow-hidden rounded-[32px] shadow-[0_12px_12px_-10px_rgba(15,23,42,0.28),0_4px_8px_-6px_rgba(15,23,42,0.16)]"
-                  initial={false}
-                  animate={{ borderRadius: "32px" }}
-                  transition={{ layout: layoutTransition, borderRadius: layoutTransition }}
+                <button
+                  type="button"
+                  onClick={() => setPreviewOpen(true)}
+                  disabled={interactionLocked}
+                  aria-label="Preview clock"
+                  className={cn(
+                    "w-full cursor-pointer appearance-none border-0 bg-transparent p-0 text-left shadow-none outline-none ring-0",
+                    "rounded-[32px] transition-transform duration-150 focus-visible:ring-2 focus-visible:ring-zinc-300/80 focus-visible:ring-offset-2 active:scale-[0.97]",
+                    interactionLocked && "cursor-default"
+                  )}
                 >
-                  <ClockCardById
-                    id={clockId}
-                    now={now}
-                    className="w-full !rounded-none !shadow-none"
-                    animated={heroAnimated}
-                    layoutMode={layoutMode}
-                    fontColor={FONT_COLOR_CSS[fontColorId]}
-                  />
-                </motion.div>
+                  <motion.div
+                    layoutId={PREVIEW_SURFACE_LAYOUT_ID}
+                    className="relative w-full min-h-[164px] overflow-hidden rounded-[32px] shadow-[0_12px_12px_-10px_rgba(15,23,42,0.28),0_4px_8px_-6px_rgba(15,23,42,0.16)]"
+                    initial={false}
+                    animate={{ borderRadius: "32px" }}
+                    transition={{ layout: layoutTransition, borderRadius: layoutTransition }}
+                  >
+                    <ClockCardById
+                      ref={heroRef}
+                      id={clockId}
+                      now={now}
+                      className="w-full !rounded-none !shadow-none"
+                      animated={heroAnimated}
+                      layoutMode={layoutMode}
+                      fontColor={FONT_COLOR_CSS[fontColorId]}
+                    />
+                  </motion.div>
+                </button>
               </div>
             </div>
 
@@ -245,17 +257,17 @@ export function ClockDetailView({
                   setActiveDrawer("layout")
                 }}
                 icon={
-                  <Image className="size-5 text-zinc-400" strokeWidth={1.75} aria-hidden />
+                  <Cookie className="size-5 text-zinc-400" strokeWidth={2.5} aria-hidden />
                 }
               />
               <SettingRow
-                label="Font"
+                label="Font Color"
                 value={fontColorLabel(fontColorId)}
                 onClick={() => {
                   setActiveDrawer("font")
                 }}
                 icon={
-                  <CaseUpper className="size-5 text-zinc-400" strokeWidth={1.75} aria-hidden />
+                  <Palette className="size-5 text-zinc-400" strokeWidth={2.5} aria-hidden />
                 }
               />
             </motion.div>

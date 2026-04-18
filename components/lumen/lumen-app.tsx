@@ -113,11 +113,13 @@ export function LumenApp() {
   }, [])
 
   const openCard = React.useCallback(
-    (id: ClockCardId, el: HTMLElement) => {
+    (id: ClockCardId) => {
       const scrollEl = scrollAreaRef.current
       if (!scrollEl) return
+      const surface = cardRefs.current[id]
+      if (!surface) return
       savedScrollTop.current = scrollEl.scrollTop
-      openingGalleryRectRef.current = el.getBoundingClientRect()
+      openingGalleryRectRef.current = surface.getBoundingClientRect()
       setDetailLayoutMode(getDefaultLayoutForClockId(id))
       if (prefersReducedMotion) {
         setSelectedId(id)
@@ -128,7 +130,7 @@ export function LumenApp() {
         return
       }
       const shell = phoneShellElRef.current?.getBoundingClientRect()
-      const rawFrom = el.getBoundingClientRect()
+      const rawFrom = surface.getBoundingClientRect()
       const from = shell
         ? intersectDomRectWithBounds(rawFrom, shell)
         : new DOMRect(rawFrom.x, rawFrom.y, rawFrom.width, rawFrom.height)

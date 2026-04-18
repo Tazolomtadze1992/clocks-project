@@ -11,12 +11,20 @@ export const DEFAULT_LAYOUT_BY_CLOCK_ID: Record<ClockCardId, ClockLayoutMode> = 
   "static-1": "Default",
   "static-2": "Centered",
   "static-3": "Glass Container",
-  "static-4": "Small Corners",
-  "static-5": "Bottom Row",
+  "static-4": "Default",
+  "static-5": "Top Clock",
   "static-6": "Thunder",
   "static-7": "Centered",
   "static-8": "Glass Container",
-  "static-9": "Bottom Row",
+  "static-9": "Top Clock",
+  "static-10": "Default",
+  "static-11": "Default",
+  "static-12": "Default",
+  "static-13": "Default",
+  "static-14": "Default",
+  "static-15": "Default",
+  "static-16": "Default",
+  "static-17": "Default",
 }
 
 export function getDefaultLayoutForClockId(clockId: ClockCardId): ClockLayoutMode {

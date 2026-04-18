@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useReducedMotion } from "framer-motion"
 import { X } from "lucide-react"
 import { Drawer } from "vaul"
 
@@ -10,6 +11,10 @@ import type { FontColorId } from "@/lib/lumen/font-color-options"
 import { FONT_COLOR_CSS, fontColorLabel } from "@/lib/lumen/font-color-options"
 import type { ClockLayoutMode } from "@/lib/lumen/clock-layout-modes"
 import { cn } from "@/lib/utils"
+
+/** Matches `easeOut` in clock-detail-view — picker micro-interaction. */
+const swatchIndicatorTransitionClass =
+  "origin-center transform-gpu transition-[opacity,scale] duration-[120ms] ease-[cubic-bezier(.23,1,.32,1)]"
 
 export type ClockOptionDrawerVariant = "cards" | "rows" | "layoutCarousel" | "fontSwatches"
 
@@ -43,6 +48,31 @@ export function ClockOptionDrawer({
 }: ClockOptionDrawerProps) {
   /** Without this, `fixed` overlay/sheet stay viewport-anchored even when Radix portals into the phone. */
   const inPhone = Boolean(container)
+  const reduceMotion = useReducedMotion()
+  const hasMountedSwatchesRef = React.useRef(false)
+  const [previousFontId, setPreviousFontId] = React.useState<FontColorId | null>(null)
+  const lastFontRef = React.useRef(selected)
+  const prevVariantRef = React.useRef(variant)
+
+  React.useEffect(() => {
+    hasMountedSwatchesRef.current = true
+  }, [])
+
+  React.useEffect(() => {
+    if (variant === "fontSwatches" && prevVariantRef.current !== "fontSwatches") {
+      lastFontRef.current = selected
+      setPreviousFontId(null)
+    }
+    prevVariantRef.current = variant
+  }, [variant, selected])
+
+  React.useEffect(() => {
+    if (variant !== "fontSwatches") return
+    if (lastFontRef.current !== selected) {
+      setPreviousFontId(lastFontRef.current as FontColorId)
+      lastFontRef.current = selected
+    }
+  }, [selected, variant])
 
   return (
     <Drawer.Root
@@ -76,10 +106,10 @@ export function ClockOptionDrawer({
               </Drawer.Title>
               <Drawer.Close
                 type="button"
-                className="flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-600 transition hover:bg-zinc-200/90"
+                className="flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 transition-colors transition-transform duration-150 hover:bg-zinc-200/90 active:scale-[0.97]"
                 aria-label="Close"
               >
-                <X className="size-[18px]" strokeWidth={2} />
+                <X className="size-[16px]" strokeWidth={3.5} />
               </Drawer.Close>
             </div>
 
@@ -96,7 +126,13 @@ export function ClockOptionDrawer({
                 <div className="flex flex-wrap justify-between gap-y-3 pb-1">
                   {(options as readonly FontColorId[]).map((id) => {
                     const isOn = selected === id
+                    const isPrevious = previousFontId === id && !isOn
                     const fill = FONT_COLOR_CSS[id]
+                    const indicatorClassName = isOn
+                      ? "scale-100 opacity-100"
+                      : isPrevious
+                        ? "scale-[0.3] opacity-0"
+                        : "scale-[0.3] opacity-0"
                     return (
                       <button
                         key={id}
@@ -110,12 +146,19 @@ export function ClockOptionDrawer({
                         aria-label={fontColorLabel(id)}
                         aria-pressed={isOn}
                       >
-                        {isOn && (
-                          <span
-                            className="pointer-events-none absolute left-1/2 top-1/2 size-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-zinc-200"
-                            aria-hidden
-                          />
-                        )}
+                        <span
+                          className={cn(
+                            "pointer-events-none absolute left-1/2 top-1/2 size-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-zinc-200",
+                            swatchIndicatorTransitionClass,
+                            reduceMotion && "transition-none",
+                            hasMountedSwatchesRef.current
+                              ? indicatorClassName
+                              : isOn
+                                ? "scale-100 opacity-100"
+                                : "scale-[0.3] opacity-0"
+                          )}
+                          aria-hidden
+                        />
                       </button>
                     )
                   })}
@@ -167,7 +210,7 @@ export function ClockOptionDrawer({
               <button
                 type="button"
                 className={cn(
-                  "flex h-12 w-full shrink-0 items-center justify-center rounded-full bg-zinc-900 text-[15px] font-semibold text-white transition hover:bg-zinc-800",
+                  "flex h-12 w-full shrink-0 items-center justify-center rounded-full bg-control-soft text-[15px] font-semibold text-zinc-900 transition-colors transition-transform duration-150 hover:bg-control-soft-hover active:scale-[0.97]",
                   variant === "fontSwatches" ? "mt-7" : "mt-5"
                 )}
               >

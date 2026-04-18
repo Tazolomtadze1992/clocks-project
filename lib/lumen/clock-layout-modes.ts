@@ -3,8 +3,7 @@ export const CLOCK_LAYOUT_MODES = [
   "Centered",
   "Glass Container",
   "Analog",
-  "Bottom Row",
-  "Small Corners",
+  "Top Clock",
   "Thunder",
 ] as const
 
