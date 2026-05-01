@@ -5,8 +5,12 @@ import * as React from "react"
 // Paper shaders are scaled into cards via `ShaderFit` — see ./shader-fit.tsx and per-card tune comments in card-*.tsx
 
 import { ClockCardById } from "@/components/lumen/clock-card-by-id"
+import {
+  defaultAppearanceForClockId,
+  type ClockCardAppearance,
+} from "@/lib/lumen/clock-card-appearance"
 import { CLOCK_CARD_IDS, SHADER_CLOCK_CARD_IDS, type ClockCardId } from "@/lib/lumen/clock-card-ids"
-import { getDefaultLayoutForClockId } from "@/lib/lumen/default-layout-by-clock-id"
+import { FONT_COLOR_CSS } from "@/lib/lumen/font-color-options"
 import { cn } from "@/lib/utils"
 
 export type MockupClockCardsProps = {
@@ -20,6 +24,8 @@ export type MockupClockCardsProps = {
   hiddenCardId?: ClockCardId | null
   /** When true, no opacity transition on card buttons — instant hide/reveal for flip-out handoff. */
   disableOpacityTransitions?: boolean
+  /** Shared card config (layout + font); defaults to curated static defaults per id. */
+  resolveCardAppearance?: (id: ClockCardId) => ClockCardAppearance
 }
 
 export function MockupClockCards({
@@ -29,29 +35,34 @@ export function MockupClockCards({
   registerCardRef,
   hiddenCardId,
   disableOpacityTransitions = false,
+  resolveCardAppearance = defaultAppearanceForClockId,
 }: MockupClockCardsProps) {
   return (
     <div className={cn("flex flex-col gap-6", className)}>
-      {CLOCK_CARD_IDS.map((id) => (
-        <button
-          key={id}
-          type="button"
-          className={cn(
-            "w-full appearance-none rounded-[32px] border-0 bg-transparent p-0 text-left shadow-none ring-0 outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/80 focus-visible:ring-offset-2",
-            !disableOpacityTransitions && "transition-opacity active:opacity-95",
-            id === hiddenCardId && "pointer-events-none opacity-0"
-          )}
-          onClick={() => onCardSelect?.(id)}
-        >
-          <ClockCardById
-            ref={(el) => registerCardRef?.(id, el)}
-            id={id}
-            now={now}
-            animated={(SHADER_CLOCK_CARD_IDS as readonly string[]).includes(id)}
-            layoutMode={getDefaultLayoutForClockId(id)}
-          />
-        </button>
-      ))}
+      {CLOCK_CARD_IDS.map((id) => {
+        const appearance = resolveCardAppearance(id)
+        return (
+          <button
+            key={id}
+            type="button"
+            className={cn(
+              "w-full appearance-none rounded-[32px] border-0 bg-transparent p-0 text-left shadow-none ring-0 outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/80 focus-visible:ring-offset-2",
+              !disableOpacityTransitions && "transition-opacity active:opacity-95",
+              id === hiddenCardId && "pointer-events-none opacity-0"
+            )}
+            onClick={() => onCardSelect?.(id)}
+          >
+            <ClockCardById
+              ref={(el) => registerCardRef?.(id, el)}
+              id={id}
+              now={now}
+              animated={(SHADER_CLOCK_CARD_IDS as readonly string[]).includes(id)}
+              layoutMode={appearance.layoutMode}
+              fontColor={FONT_COLOR_CSS[appearance.fontColorId]}
+            />
+          </button>
+        )
+      })}
     </div>
   )
 }

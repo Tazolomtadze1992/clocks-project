@@ -9,13 +9,7 @@ import { ClockCardById } from "@/components/lumen/clock-card-by-id"
 import { ClockFullscreenPreview } from "@/components/lumen/clock-fullscreen-preview"
 import { ClockOptionDrawer } from "@/components/lumen/clock-option-drawer"
 import type { ClockCardId } from "@/lib/lumen/clock-card-ids"
-import {
-  DEFAULT_FONT_COLOR_ID,
-  FONT_COLOR_CSS,
-  FONT_COLOR_IDS,
-  fontColorLabel,
-  type FontColorId,
-} from "@/lib/lumen/font-color-options"
+import { FONT_COLOR_CSS, FONT_COLOR_IDS, fontColorLabel, type FontColorId } from "@/lib/lumen/font-color-options"
 import { CLOCK_LAYOUT_MODES, type ClockLayoutMode } from "@/lib/lumen/clock-layout-modes"
 import { cn } from "@/lib/utils"
 
@@ -51,6 +45,8 @@ type ClockDetailViewProps = {
   /** Controlled layout selection (gallery default + FLIP overlay live in parent). */
   layoutMode: ClockLayoutMode
   onLayoutModeChange: (mode: ClockLayoutMode) => void
+  fontColorId: FontColorId
+  onFontColorIdChange: (id: FontColorId) => void
 }
 
 function SettingRow({
@@ -95,6 +91,8 @@ export function ClockDetailView({
   onPreviewOpenChange,
   layoutMode,
   onLayoutModeChange,
+  fontColorId,
+  onFontColorIdChange,
 }: ClockDetailViewProps) {
   const reduceMotion = useReducedMotion()
   const controlsInitial = reduceMotion ? false : { opacity: 0 }
@@ -103,7 +101,6 @@ export function ClockDetailView({
     : { duration: controlsEnterDurationSec, delay: controlsEnterDelaySec, ease: easeOut }
   const rootRef = React.useRef<HTMLDivElement>(null)
   const [activeDrawer, setActiveDrawer] = React.useState<null | "layout" | "font">(null)
-  const [fontColorId, setFontColorId] = React.useState<FontColorId>(DEFAULT_FONT_COLOR_ID)
   const [previewOpen, setPreviewOpen] = React.useState(false)
 
   React.useEffect(() => {
@@ -298,7 +295,7 @@ export function ClockDetailView({
         title="Change font"
         options={FONT_COLOR_IDS}
         selected={fontColorId}
-        onSelect={(v) => setFontColorId(v as FontColorId)}
+        onSelect={(v) => onFontColorIdChange(v as FontColorId)}
         variant="fontSwatches"
         container={drawerContainer}
       />

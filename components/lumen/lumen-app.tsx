@@ -9,8 +9,12 @@ import { ClockFlipOverlay } from "@/components/lumen/clock-flip-overlay"
 import { MockupClockCards } from "@/components/lumen/mockup-clock-cards"
 import { PhoneShell } from "@/components/lumen/phone-shell"
 import type { ClockCardId } from "@/lib/lumen/clock-card-ids"
-import { getDefaultLayoutForClockId } from "@/lib/lumen/default-layout-by-clock-id"
+import {
+  resolveClockCardAppearance,
+  type ClockCardAppearance,
+} from "@/lib/lumen/clock-card-appearance"
 import { DEFAULT_CLOCK_LAYOUT_MODE, type ClockLayoutMode } from "@/lib/lumen/clock-layout-modes"
+import { FONT_COLOR_CSS } from "@/lib/lumen/font-color-options"
 import { intersectDomRectWithBounds } from "@/lib/lumen/intersect-dom-rect"
 import { useTickingClock } from "@/lib/lumen/use-ticking-clock"
 import { cn } from "@/lib/utils"
@@ -76,6 +80,10 @@ export function LumenApp() {
 
   const [phase, setPhase] = React.useState<Phase>("gallery")
   const [selectedId, setSelectedId] = React.useState<ClockCardId | null>(null)
+  /** Per-card layout + font; merged when user edits detail. Gallery + detail read same store. */
+  const [cardAppearances, setCardAppearances] = React.useState<
+    Partial<Record<ClockCardId, ClockCardAppearance>>
+  >({})
   /** Curated default on open; updated by Layout drawer — drives detail hero, preview, and FLIP overlay. */
   const [detailLayoutMode, setDetailLayoutMode] = React.useState<ClockLayoutMode>(DEFAULT_CLOCK_LAYOUT_MODE)
   const [flipRects, setFlipRects] = React.useState<{ from: DOMRect; to: DOMRect } | null>(null)
@@ -112,6 +120,18 @@ export function LumenApp() {
     else delete cardRefs.current[id]
   }, [])
 
+  const mergeCardAppearance = React.useCallback((id: ClockCardId, patch: Partial<ClockCardAppearance>) => {
+    setCardAppearances((prev) => {
+      const base = resolveClockCardAppearance(prev, id)
+      return { ...prev, [id]: { ...base, ...patch } }
+    })
+  }, [])
+
+  const resolveAppearance = React.useCallback(
+    (id: ClockCardId) => resolveClockCardAppearance(cardAppearances, id),
+    [cardAppearances]
+  )
+
   const openCard = React.useCallback(
     (id: ClockCardId) => {
       const scrollEl = scrollAreaRef.current
@@ -120,7 +140,7 @@ export function LumenApp() {
       if (!surface) return
       savedScrollTop.current = scrollEl.scrollTop
       openingGalleryRectRef.current = surface.getBoundingClientRect()
-      setDetailLayoutMode(getDefaultLayoutForClockId(id))
+      setDetailLayoutMode(resolveClockCardAppearance(cardAppearances, id).layoutMode)
       if (prefersReducedMotion) {
         setSelectedId(id)
         setDetailHeroShown(true)
@@ -146,7 +166,7 @@ export function LumenApp() {
       setShowDetailControls(true)
       scrollEl.style.overflow = "hidden"
     },
-    [prefersReducedMotion]
+    [prefersReducedMotion, cardAppearances]
   )
 
   /** Measure real detail hero rect after layout — matches overlay `to` exactly (no estimated hero-rect math). */
@@ -302,6 +322,7 @@ export function LumenApp() {
                   registerCardRef={registerCardRef}
                   hiddenCardId={hiddenCardId}
                   disableOpacityTransitions={phase === "flip-out"}
+                  resolveCardAppearance={resolveAppearance}
                 />
               </div>
             </>
@@ -320,7 +341,12 @@ export function LumenApp() {
               drawerContainer={drawerPortalContainer}
               onPreviewOpenChange={setClockPreviewOpen}
               layoutMode={detailLayoutMode}
-              onLayoutModeChange={setDetailLayoutMode}
+              onLayoutModeChange={(mode) => {
+                setDetailLayoutMode(mode)
+                mergeCardAppearance(selectedId, { layoutMode: mode })
+              }}
+              fontColorId={resolveAppearance(selectedId).fontColorId}
+              onFontColorIdChange={(fc) => mergeCardAppearance(selectedId, { fontColorId: fc })}
             />
           )}
 
@@ -344,6 +370,7 @@ export function LumenApp() {
                 now={now}
                 animated={false}
                 layoutMode={detailLayoutMode}
+                fontColor={FONT_COLOR_CSS[resolveAppearance(overlayId).fontColorId]}
                 className="h-full min-h-0 w-full shadow-none"
               />
             </ClockFlipOverlay>
